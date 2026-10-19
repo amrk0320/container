@@ -7,6 +7,7 @@ A lightweight container runtime implemented in Go from scratch. This project dem
 - **Namespaces (`CLONE_NEW*`)**: Isolates UTS (hostname), PID (process trees), NS (mount points), and NET (network interfaces) to create a fully sandboxed environment.
 - **Cgroups**: Limits resource usage. Currently prevents fork bombs by restricting the maximum number of child processes to 20 (`pids.max`).
 - **Chroot**: Jails the container process into a specific root filesystem.
+- **OverlayFS**: Implements a union mount filesystem. Containers share a single read-only base image (`lowerdir`) while writing all modifications to a container-specific ephemeral layer (`upperdir`). This enables launching multiple independent containers instantaneously from the same base image.
 
 ## Prerequisites
 
@@ -90,6 +91,8 @@ docker exec -it mini-container bash
 ./container run app2 /bin/sh
 ```
 
+Both `app1` and `app2` will run in complete isolation sharing the same base `rootfs` via OverlayFS.
+
 4. Verify the process limit (from the Docker container shell, not inside `app1`):
 
 ```bash
@@ -98,9 +101,3 @@ cat /sys/fs/cgroup/app1/pids.max
 
 It should print `20`.
 
-Exit the container shell, then remove the container and volumes:
-
-```bash
-docker rm -f mini-container
-docker volume rm container-rootfs container-layers
-```
